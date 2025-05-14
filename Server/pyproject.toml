@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "server"
+version = "0.1.0"
+description = "Projet Django avec Celery"
+authors = ["JulsDev-25 <julesloic9@gmail.com>"]
+readme = "README.md"
+packages = [
+    { include = "server_config" }  # Spécifie où se trouve ton code Django
+]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+django = ">=5.2.1,<6.0.0"
+celery = ">=5.5.2,<6.0.0"
+cffi = "^1.17.1"
+django-prometheus = "^2.3.1"
+psycopg2-binary = "^2.9.10"
+psycopg2 = "^2.9.10"
+python-dotenv = "^1.1.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+django = "django.core.management:execute_from_command_line"
+
