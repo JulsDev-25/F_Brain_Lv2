@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: Server/
+      dockerfile: Dockerfile
+    command: poetry run python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - Server/.env
+    depends_on:
+      - db
+      - rabbitmq
+    volumes:
+      - Server/:/app
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5433"
+    volumes:
+      - Server/pgdata:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "9419:9419"  # Port pour Prometheus
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "rabbit_cookie"
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+    command: >
+      sh -c "rabbitmq-plugins enable --offline rabbitmq_prometheus && rabbitmq-server"
+
+  celery:
+    build:
+      context: Server/
+      dockerfile: Dockerfile
+    command: poetry run celery -A mon_projet worker --loglevel=info
+    depends_on:
+      - rabbitmq
+      - db
+    env_file:
+      - Server/.env
+    volumes:
+      - Server/:/app
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - Monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - Monitoring/grafana_data:/var/lib/grafana
+
+volumes:
+  Monitoring/pgdata:
+  Monitorin/grafana_data:
+
